@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- custom css -->
+    <link rel="stylesheet" type="text/css" href="../css/baseline_demo.css">
+    <!-- bootstrap css -->
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="outer">
+        <h4 class="chartTitle">Normal</h4>
+        <div id="chartContainer" class="inner"></div>
+        <h4 class="chartTitle">Dynamic Simplification</h4>
+        <div id="chartContainerVW" class="inner"></div>
+    </div>
+
+
+    <!-- jquery cdn -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <!-- underscore.js cdn -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+    <!-- canvasjs -->
+    <script type="text/javascript" src="../js/libraries/canvasjs-1.9.6/canvasjs.min.js"></script>
+    <!-- bootstrap.js cdn -->
+    <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    
+    <!-- no dependences -->
+    <script src="../js/charting_functions.js"></script>
+    <script src="../js/geometry.js"></script>
+    <script src="../js/minHeap.js"></script>
+    <script src="../js/dataView.js"></script>
+
+    <!-- dependencies: geometry.js, minHeap.js -->
+    <script src="../js/simplify.js"></script>
+
+    <!-- dependencies: charting_functions.js -->
+    <script src="../js/zoomManager.js"></script>
+
+
+    <script src="../js/baseline_demo.js"></script>
+</body>
+</html>

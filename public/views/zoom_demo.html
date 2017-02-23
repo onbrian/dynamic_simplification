@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- custom css -->
+    <link rel="stylesheet" type="text/css" href="../css/zoom_demo.css">
+    <!-- bootstrap css -->
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <!-- jquery cdn -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <!-- underscore.js cdn -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+    <!-- canvasjs -->
+    <script type="text/javascript" src="../js/libraries/canvasjs-1.9.6/canvasjs.min.js"></script>
+    <!-- bootstrap.js cdn -->
+    <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+<body>
+    <div>
+        <h3 class="chartTitle">Normal</h3>
+        <div id="chartContainer" class="inner"></div>
+    </div>
+
+    <br>
+    <div id="kdtreeContainer" class='inner'>
+    </div>
+    <script type="text/template" id="kdnodeTemplate">
+        <button id="nodeParent">Go to Parent</button>
+        <br>
+        <p>Depth: {{ depth }}</p>
+        <p>Axis: {{ axis }}</p>
+        <p>Cut: {{ cut }}</p>
+        <p>Cut Index: {{ cutIndex }} </p>
+        <p>Leaf: {{ leaf }}</p>
+        <p>Points: {{ points }}</p>
+        <div id="leftButtonDiv">
+            <button id="nodeChildLeft">Go to Left Child</button>
+        </div>
+        <div id="rightButtonDiv">
+            <button id="nodeChildRight">Go to Right Child</button>
+        </div>
+    </script>
+
+    <!-- no dependences -->
+    <script src="../js/charting_functions.js"></script>
+    <script src="../js/geometry.js"></script>
+    <script src="../js/minHeap.js"></script>
+
+    <!-- dependencies: geometry.js, minHeap.js -->
+    <script src="../js/simplify.js"></script>
+
+    <script src="../js/queue.js"></script>
+    <script src="../js/optimizedKdTree.js"></script>
+    <!-- <script src="../js/kdTree.js"></script> -->
+    <script src="../js/zoom_demo.js"></script>
+</body>
+</html>
