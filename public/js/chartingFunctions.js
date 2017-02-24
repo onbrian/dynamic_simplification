@@ -7,12 +7,12 @@ var CanvasHelper = (function()
 		var segmentData = [];
 		var canvasObject = {
 			type: "line",
-			markerType: "none", // so data points don't become circles 
+			markerType: "none", // so data points don't become circles
 			dataPoints: segmentData
 		};
 		for (var i = 0; i < segment.length; i++)
 		{
-			segmentData.push({x: segment[i][0], y: segment[i][1]})
+			segmentData.push({x: segment[i][0], y: segment[i][1]});
 		}
 		return canvasObject;
 	}
@@ -37,11 +37,8 @@ var CanvasHelper = (function()
 				horizontalAlign: "right",
 				verticalAlign: "center"
 			},
-			rangeChanging: function(e)
-			{
-			},
 			axisY:{
-				includeZero: false
+				includeZero: true
 			},
 			width: width,
 			height: height
@@ -50,17 +47,9 @@ var CanvasHelper = (function()
 		return chart;
 	}
 
-	function renderDataView(chart, dataview)
-	{
-		
-
-
-	}
-
 	return {
 		segmentToCanvasObject: segmentToCanvasObject,
 		linesToCanvasObjects: linesToCanvasObjects,
-		initEmptyChart: initEmptyChart,
-		renderDataView: renderDataView
-	}
+		initEmptyChart: initEmptyChart
+	};
 })();

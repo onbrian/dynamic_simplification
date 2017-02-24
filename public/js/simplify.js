@@ -2,7 +2,6 @@
 
 var Simplify = (function()
 {
-
 	// a point should have at least 2 coordinates
 	function setCoordinateZ(p, val)
 	{
@@ -14,13 +13,7 @@ var Simplify = (function()
 	/********************* VISVALINGHAM-WHYATT ALGORITHM **********************/
 	/**************************************************************************/
 
-	Triangle.prototype.computeArea = function()
-	{
-		this.area = Geometry.triangeArea(this.pLeft, this.p, this.pRight);
-	}
-
-	// simple constructor for triangle object
-	// for use in VW algorithm
+	// "nested" Triangle classfor use in VW algorithm
 	function Triangle(i, pLeft, p, pRight)
 	{
 		// index of triangle in line
@@ -40,7 +33,7 @@ var Simplify = (function()
 	function updateTri(minheap, tri)
 	{
 		minheap.remove(tri);
-		tri.computeArea();
+		tri.area = Geometry.triangleArea(tri.pLeft, tri.p, tri.pRight);
 		minheap.push(tri);
 	}
 
@@ -55,7 +48,7 @@ var Simplify = (function()
 			// left neighbor's right point is now <tri>'s right point
 			leftNeighbor.pRight = tri.pRight;
 			// remove neighbor, recompute area, push
-			updateTri(leftNeighbor);
+			updateTri(minheap, leftNeighbor);
 
 		}
 
@@ -66,7 +59,7 @@ var Simplify = (function()
 			// right neighbor's left point is now <tri>'s left point
 			rightNeighbor.pLeft = tri.pLeft;
 			// remove neighbor, recompute area, push
-			updateTri(rightNeighbor);
+			updateTri(minheap, rightNeighbor);
 		}
 
 		// update neighbor links
@@ -74,15 +67,13 @@ var Simplify = (function()
 		// both neighbors exist
 		if (leftNeighbor !== null && rightNeighbor !== null)
 		{
-			leftNeighbor.right = rightNeighbor;
-			rightNeighbor.left = leftNeighbor;
+			leftNeighbor.nRight = rightNeighbor;
+			rightNeighbor.nLeft = leftNeighbor;
 		}
 		// only left neighbor exists
-		else if (leftNeighbor !== null)
-			leftNeighbor.right = null;
+		else if (leftNeighbor !== null) leftNeighbor.nRight = null;
 		// only right neighbor exists
-		else if (rightNeighbor !== null)
-			rightNeighbor.left = null;
+		else if (rightNeighbor !== null) rightNeighbor.nLeft = null;
 
 		return;
 	}
@@ -102,9 +93,9 @@ var Simplify = (function()
 
 		// min priority queue to store points/triangles in order of area
 		var minHeap = new MinHeap(function(a, b)
-			{
-				return a.area - b.area;
-			});
+		{
+			return a.area - b.area;
+		});
 
 		// initialize triangles for points in line
 		for (var i = 1, prevTri = null, currTri = null; i < line.length - 1; i++)
@@ -113,8 +104,8 @@ var Simplify = (function()
 			// set neighbors if not first triangle
 			if (prevTri !== null)
 			{
-				currTri.left = prevTri;
-				prevTri.right = currTri;
+				currTri.nLeft = prevTri;
+				prevTri.nRight = currTri;
 			}
 
 			// add new triangle to min heap
@@ -123,15 +114,18 @@ var Simplify = (function()
 			prevTri = currTri;
 		}
 
+		//console.log(minHeap);
+
 		// all triangles are now in priority queue... now pop them off by area
 		var tri = null;
 		var effectiveArea = null;
 		while (minHeap.getLength() > 0)
 		{
+			//console.log(minHeap.array.slice());
 			tri = minHeap.pop();
 			// effective area is maximum(previous triangle's area + 1, current triangle area)
-			effectiveArea = (effectiveArea !== null) 
-							&& (effectiveArea >= tri.area) ? (effectiveArea + 1) : tri.area;
+			effectiveArea = (effectiveArea !== null) &&
+				(effectiveArea >= tri.area) ? (effectiveArea + 1) : tri.area;
 
 			// store area with point as 3rd coordinate
 			setCoordinateZ(line[tri.i], effectiveArea);
@@ -149,7 +143,7 @@ var Simplify = (function()
 	// constructor for point wrapper (for priority queue)
 	// <pIndex>: index of point this point wrapper represents
 	// <aIndex>: index of first index of line segment this point splits
-	// <bIndex>: index of second index of line segment this point splits 
+	// <bIndex>: index of second index of line segment this point splits
 	// <sqDist>: the sq dist of point <pIndex> from segment (<aIndex>, <bIndex>)
 	function PointWrapper(pIndex, aIndex, bIndex, sqDist)
 	{
@@ -159,9 +153,9 @@ var Simplify = (function()
 		this.sqDist = sqDist;
 	}
 
-	// given a line <line>, and two indices <aIndex> and <bIndex> into the line 
-	// that represent endpoints of a simplified line segment, find the point in 
-	// between those indices on the original line with the furthest 
+	// given a line <line>, and two indices <aIndex> and <bIndex> into the line
+	// that represent endpoints of a simplified line segment, find the point in
+	// between those indices on the original line with the furthest
 	// perpendicular distance from the segment.
 	// return the point with most significant distance as a point wrapper
 	function getBestPoint(aIndex, bIndex, line)
@@ -194,7 +188,7 @@ var Simplify = (function()
 		var rankedPoints = [];
 		var pq = new MinHeap(function(a, b){
 			// since this a min heap, negative diff to make it normal pq
-			return b.sqDist - a.sqDist; 
+			return b.sqDist - a.sqDist;
 		});
 
 		// end points are most important & should not be deleted
@@ -219,7 +213,7 @@ var Simplify = (function()
 			rankedPoints.push(p);
 
 			// add points to priority queue if they exist
-			if ((bestLeft = getBestPoint(pW.a, pW.i, line)) !== null) 
+			if ((bestLeft = getBestPoint(pW.a, pW.i, line)) !== null)
 				pq.push(bestLeft);
 			if ((bestRight = getBestPoint(pW.i, pW.b, line)) !== null)
 				pq.push(bestRight);

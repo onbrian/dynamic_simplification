@@ -1,3 +1,4 @@
+// semi-randomly generate <numLines> lines, each with <limit> points
 function generatePoints(numLines, limit)
 {
 	var data = [];
@@ -6,11 +7,11 @@ function generatePoints(numLines, limit)
 	{
 		//var dataSeries = { type: "line" };
 		var dataPoints = [];
-		for (var j = 0; j < limit; j += 1) 
+		for (var j = 0; j < limit; j += 1)
 		{
 			y += (Math.random() * 10 - 5);
 			// [x, y, priority, "workspace" boolean, index]
-			dataPoints.push([j - limit / 2, y, 0, false, j])
+			dataPoints.push([j - limit / 2, y, 0, false, j]);
 		}
 		//dataSeries.dataPoints = dataPoints;
 		data.push(dataPoints);
@@ -18,26 +19,14 @@ function generatePoints(numLines, limit)
 	return data;
 }
 
-function simplifyLine(rankFunction, line, percent)
-{
-	// number of points to include
-	var num = parseInt(percent * line.length, 10);
-	//console.log(num);
-	var ranked = rankFunction(line);
-	var simplified = ranked.slice(0, num);
-	simplified.sort(function(a, b){ return a[4] - b[4]});
-	return simplified;
-}
-
-// semi-randomly generate <numLines> lines, each with <limit> points
-
-var numLines = 10;
-var limit = 100000;    //increase number of dataPoints by increasing this
-
-var rawData = generatePoints(numLines, limit);
+var numLines = 200;
+var limit = 10000;    //increase number of dataPoints by increasing this
 
 console.log("Number of Lines: " + numLines);
 console.log("Points per line: " + limit);
+
+var rawData = generatePoints(numLines, limit);
+
 console.time("VW Simplification");
 for (var i = 0; i < rawData.length; i++)
 {
@@ -45,7 +34,7 @@ for (var i = 0; i < rawData.length; i++)
 }
 console.timeEnd("VW Simplification");
 
-window.onload = function ()
+window.onload = function()
 {
 	var width = 550;
 	var height = 300;
@@ -56,7 +45,8 @@ window.onload = function ()
 
 	// initialize & render zoomable, simplified chart
     var chartZoom = CanvasHelper.initEmptyChart("chartContainerVW", height, width);
-    var zm = new ZoomManager(chartZoom, rawData, [chartFull]); 
+    var zm = new ZoomManager(chartZoom, rawData, 50000, [chartFull]);
+    zm.render();
 
 
-}
+};

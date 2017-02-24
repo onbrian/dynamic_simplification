@@ -27,13 +27,13 @@ app.get('/demo', function(req, res) {
 
 
 // load main page
-app.get('/zoom_demo', function(req, res) {
-    res.render('zoom_demo.html');
+app.get('/zoomDemo', function(req, res) {
+    res.render('zoomDemo.html');
 });
 
 // load main page
-app.get('/baseline_demo', function(req, res) {
-    res.render('baseline_demo.html');
+app.get('/baselineDemo', function(req, res) {
+    res.render('baselineDemo.html');
 });
 
 

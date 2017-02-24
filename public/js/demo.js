@@ -6,11 +6,11 @@ function generatePoints(numLines, limit)
 	{
 		//var dataSeries = { type: "line" };
 		var dataPoints = [];
-		for (var j = 0; j < limit; j += 1) 
+		for (var j = 0; j < limit; j += 1)
 		{
 			y += (Math.random() * 10 - 5);
 			// [x, y, priority, "workspace" boolean, index]
-			dataPoints.push([j - limit / 2, y, 0, false, j])
+			dataPoints.push([j - limit / 2, y, 0, false, j]);
 		}
 		//dataSeries.dataPoints = dataPoints;
 		data.push(dataPoints);
@@ -25,7 +25,7 @@ function simplifyLineV1(rankFunction, line, percent)
 	//console.log(num);
 	var ranked = rankFunction(line);
 	var simplified = ranked.slice(0, num);
-	simplified.sort(function(a, b){ return a[4] - b[4]});
+	simplified.sort(function(a, b){ return a[4] - b[4]; });
 	return simplified;
 }
 
@@ -42,7 +42,7 @@ function simplifyLineV2(line, percent)
 	}
 	var simplified = [];
 
-	for (var i = 0, p = null; i < line.length; i++)
+	for (i = 0, p = null; i < line.length; i++)
 	{
 		p = line[i];
 
@@ -56,7 +56,7 @@ function simplifyLineV2(line, percent)
 // semi-randomly generate <numLines> lines, each with <limit> points
 
 var numLines = 3;
-var limit = 1000;    //increase number of dataPoints by increasing this
+var limit = 10000;    //increase number of dataPoints by increasing this
 var percent = 0.05;
 
 console.log("Number of Lines: " + numLines);
@@ -100,4 +100,4 @@ window.onload = function ()
 	chartFull.render();
     chartSimpVW.render();
     chartSimpRDP.render();
-}
+};
