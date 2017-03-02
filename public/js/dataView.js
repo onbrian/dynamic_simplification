@@ -27,9 +27,10 @@ var DataView = (function()
 	/*	
 		DataView instance constructor
 		Lines should have a priority value stored as z-coordinate for each point
-		Bounds should be an object with attr (x1, x2, y1, y2)
+		Bounds should be an array of two points [p1, p2]. p1 should be the point
+		of the lower left corner of the bounding rectangle; p2 the upper right.
 	*/
-	function DataView(lines, bounds=null)
+	function DataView(lines, bounds, lineFloor=50)
 	{
 		// number of total points contained in this data view
 		this.numPoints = 0;
@@ -39,17 +40,19 @@ var DataView = (function()
 		this.linesPrioritized = [];
 		// bounds  of this data view
 		this.bounds = bounds;
+
 		// point percentiles for lines in this data view
 		this.linePP = [];
 		// minimum number of points per line
-		this.lineFloor = 50;
+		this.lineFloor = lineFloor;
 		// last simplified lines cached
 		this.cachedSimpLines = null;
 
 		// copy original lines, clipping to specified bounds if any
 		for (var i = 0; i < lines.length; i++)
 		{
-			if (bounds === null) this.lines.push(lines[i].slice());
+			// first point is null, so assume no bounds
+			if (nullBounds(bounds)) this.lines.push(lines[i].slice());
 			else this.lines.push(hardClipToBounds(bounds, lines[i]));
 		}
 
@@ -69,6 +72,16 @@ var DataView = (function()
 			this.linePP.push(this.lines[i].length/this.numPoints);
 	}
 
+	/*
+		private static helper function to check
+		if <bounds> are null
+	*/
+	function nullBounds(bounds)
+	{
+		if (bounds[0][0] === null || bounds[0][1] === null) return true;
+		return bounds[1][0] === null || bounds[1][1] === null;
+	}
+
 	/*	
 		private static helper function for constructor
 		is point <p> contained in <bounds> for x axis?
@@ -76,7 +89,7 @@ var DataView = (function()
 	function pointInBoundsX(bounds, p)
 	{
 		if (bounds === null) return true;
-		return !(p[0] < bounds.x1 || p[0] > bounds.x2);
+		return !(p[0] < bounds[0][0] || p[0] > bounds[1][0]);
 	}
 
 	/*	
@@ -85,8 +98,8 @@ var DataView = (function()
 	*/
 	function pointInBoundsY(bounds, p)
 	{
-		if (bounds === null) return true;
-		return !(p[1] < bounds.y1 || p[1] > bounds.y2);
+		if (nullBounds(bounds)) return true;
+		return !(p[1] < bounds[0][1] || p[1] > bounds[1][1]);
 	}
 
 	/*	
@@ -96,18 +109,18 @@ var DataView = (function()
 	function pointInBounds(bounds, p)
 	{
 		// all points are in
-		if (bounds === null) return true;
+		if (nullBounds(bounds)) return true;
 		return pointInBoundsX(bounds, p) && pointInBoundsY(bounds, p);
 	}
 
 	/*	
-		private helper function for constructor
+		private static helper function for constructor
 		iterate through line <line> position-wise and find
 		first and last index of segment in <bounds> (if any)
 	*/
 	function hardClipToBounds(bounds, line)
 	{
-		if (bounds === null) return line;
+		if (nullBounds(bounds)) return line;
 		if (line.length <= 2) return line;
 
 		// get beginning and ending point (position-wise)
@@ -149,13 +162,13 @@ var DataView = (function()
 	}
 
 	/*	
-		private helper function for constructor
+		private static helper function for constructor
 		if a line has even one point in bounds, include whole line
 		from first time it's x-coordinate goes in bounds
 	*/
 	function softClipToBounds(bounds, line)
 	{
-		if (bounds === null) return line;
+		if (nullBounds(bounds)) return line;
 		if (line.length <= 2) return line;
 
 		// get beginning and ending point (position-wise)
@@ -206,9 +219,9 @@ var DataView = (function()
 	}
 
 	// "zoom" in on a rectangle defined by bounds object(x1, x2, y1, y2)
-	DataView.prototype.subView = function(bounds)
+	DataView.prototype.subView = function(bounds, lineFloor=50)
 	{
-		return new DataView(this.lines, bounds);
+		return new DataView(this.lines, bounds, lineFloor);
 	};
 
 	/*	
@@ -240,7 +253,7 @@ var DataView = (function()
 			simpLine.sort(function(a, b){ return a[4] - b[4]; });
 			simplifiedLines.push(simpLine);
 		}
-		
+
 		// cache this for zooming out
 		this.cachedSimpLines = simplifiedLines;
 		return simplifiedLines;

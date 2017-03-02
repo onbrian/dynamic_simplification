@@ -26,7 +26,7 @@ var ZoomManager = (function()
 		// already prioritized
 		this.lines = lines;
 		this.oldViewStack = [];
-		this.currentView = new DataView(lines, null);
+		this.currentView = new DataView(lines, [[null, null], [null, null]], 50);
 		this.viewCap = viewCap; // maximum number of points
 		this.syncCharts = syncCharts;
 
@@ -59,12 +59,12 @@ var ZoomManager = (function()
 	{
 		var axisX = e.axisX[0],
 			axisY = e.axisY[0],
-			bounds = {x1: axisX.viewportMinimum, x2: axisX.viewportMaximum,
-					  y1: axisY.viewportMinimum, y2: axisY.viewportMaximum};
+			bounds = [[axisX.viewportMinimum, axisY.viewportMinimum],
+				[axisX.viewportMaximum, axisY.viewportMaximum]];
 
 		//var childView = this.currentView.subView(bounds);
 		this.oldViewStack.push(this.currentView);
-		this.renderDataView(this.currentView = this.currentView.subView(bounds));
+		this.renderDataView(this.currentView = this.currentView.subView(bounds, 50));
 	};
 
 	// handler for canvasjs reset zoom feature
@@ -88,24 +88,25 @@ var ZoomManager = (function()
 	/*
 		private static helper method
 		set a chart's x and y axis viewports to given limits
+		--> setting axis min/max means no panning
 	*/
-	function setChartViewport(chart, x1, x2, y1, y2, fixAxes=true)
+	function setChartViewport(chart, bounds, fixAxes=true)
 	{
 		chart.options.axisX = {
-			viewportMinimum: x1,
-			viewportMaximum: x2
+			viewportMinimum: bounds[0][0],
+			viewportMaximum: bounds[1][0]
 		};
 		chart.options.axisY = {
-			viewportMinimum: y1,
-			viewportMaximum: y2
+			viewportMinimum: bounds[0][1],
+			viewportMaximum: bounds[1][1]
 		};
 
 		if (fixAxes)
 		{
-			chart.options.axisX.minimum = x1;
-			chart.options.axisX.maximum = x2;
-			chart.options.axisY.minimum = y1;
-			chart.options.axisY.maximum = y2;			
+			chart.options.axisX.minimum = bounds[0][0];
+			chart.options.axisX.maximum = bounds[1][0];
+			chart.options.axisY.minimum = bounds[0][1];
+			chart.options.axisY.maximum = bounds[1][1];			
 		}
 		return;
 	}
@@ -119,10 +120,12 @@ var ZoomManager = (function()
 		console.log("Pre-simplified Point Count: " + dataview.numPoints);
 
 
-		// use cached by default
+		// check for cached simplified lines by default
+		// and use those if they exist
 		var data = dataview.cachedSimpLines !== null ?
 			dataview.cachedSimpLines : dataview.simplifyView(this.viewCap);
 
+		// count number of points in simplified dataview
 		for (var count = i = 0; i < data.length; i++)
 			count += data[i].length;
 
@@ -136,32 +139,22 @@ var ZoomManager = (function()
 
 		// update chart bounds
 
-		// no bounds (aka base view)
-		// per canvasjs docs, set viewports to null
-		// so reset/pan buttons don't appear
+		// set bounds -- two cases
+		// 1) null bounds values (no bounds), aka base view
+		// per CanvasJS docs, reset/pan buttons don't appear
 		// and viewport automatically sizes min/max x and y points
-		var x1 = x2 = y1 = y2 = null;
-
-		// set bounds (zoomed in view)
-		// this causes reset/pan buttons to appear
-		if (dataview.bounds !== null)
-		{
-			x1 = dataview.bounds.x1;
-			x2 = dataview.bounds.x2;
-			y1 = dataview.bounds.y1;
-			y2 = dataview.bounds.y2;
-		}
-
-		setChartViewport(this.chart, x1, x2, y1, y2);
+		// 2) defined rectangle bounds for zoomed in view
+		// this latter case causes reset/pan buttons to appear
+		setChartViewport(this.chart, dataview.bounds, true);
 
 		this.chart.render();
 
 		// any sync charts
 		for (i = 0, chart = null; i < this.syncCharts.length; i++)
 		{
-			setChartViewport(this.syncCharts[i], x1, x2, y1, y2, false);
+			setChartViewport(this.syncCharts[i], dataview.bounds, false);
 			this.syncCharts[i].render();
-			console.log(this.syncCharts[i]);
+			// console.log(this.syncCharts[i]);
 		}
 	};
 
