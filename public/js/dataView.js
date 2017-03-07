@@ -30,17 +30,18 @@ var DataView = (function()
 		Bounds should be an array of two points [p1, p2]. p1 should be the point
 		of the lower left corner of the bounding rectangle; p2 the upper right.
 	*/
-	function DataView(lines, bounds, lineFloor=50)
+	function DataView(lines, boundsVP, boundsAxis, lineFloor)
 	{
 		// number of total points contained in this data view
 		this.numPoints = 0;
 		// lines contained in this data view
 		this.lines = [];
 		// cache of lines sorted by priority
-		this.linesPrioritized = [];
+		//this.linesPrioritized = [];
 		// bounds  of this data view
-		this.bounds = bounds;
-
+		this.boundsVP = boundsVP;
+		// axis bounds for this data view
+		this.boundsAxis = boundsAxis;
 		// point percentiles for lines in this data view
 		this.linePP = [];
 		// minimum number of points per line
@@ -51,17 +52,18 @@ var DataView = (function()
 		// copy original lines, clipping to specified bounds if any
 		for (var i = 0; i < lines.length; i++)
 		{
-			// first point is null, so assume no bounds
-			if (nullBounds(bounds)) this.lines.push(lines[i].slice());
-			else this.lines.push(hardClipToBounds(bounds, lines[i]));
+			// clone lines whether or not clipping -- safer to keep own copy
+			if (nullBounds(boundsVP)) this.lines.push(lines[i].slice());
+			else this.lines.push(hardClipToBounds(boundsVP, lines[i]));
 		}
 
 		// cache [clipped] lines sorted by priority
+		/*
 		for (i = 0; i < this.lines.length; i++)
 		{
 			this.linesPrioritized.push(this.lines[i].slice());
 			this.linesPrioritized[i].sort(function(a, b){return a[2] - b[2]; });
-		}
+		}*/
 
 		// set num points
 		for (i = 0; i < this.lines.length; i++)
@@ -218,21 +220,89 @@ var DataView = (function()
 		return line.slice(startIndex, stopIndex + 1);
 	}
 
-	// "zoom" in on a rectangle defined by bounds object(x1, x2, y1, y2)
-	DataView.prototype.subView = function(bounds, lineFloor=50)
+	function swapElements(list, i, j)
 	{
-		return new DataView(this.lines, bounds, lineFloor);
-	};
+		var temp = list[i];
+		list[i] = list[j], list[j] = temp;
+		return;
+	}
+
+	/*
+		private static helper function for quick select algorithm
+		partitions the elements in <list> between <leftIndex> and <rightIndex>
+		inclusive such that...
+			- all items at indices less than <pivotIndex> are less than the item
+			at <pivotIndex>
+			- all items at indices greater than <pivotIndex> are greater than
+			the item at <pivotIndex>
+	*/
+	function partition(list, leftIndex, rightIndex, pivotIndex, comparator)
+	{
+		var pivotVal = list[pivotIndex];
+		swapElements(list, pivotIndex, rightIndex);
+		for (var i = leftIndex, storeIndex = leftIndex; i < rightIndex; i++)
+		{
+			// comparator(a, b) returns negative value if a < b
+			if (comparator(list[i], pivotVal) < 0)
+			{
+				swapElements(list, i, storeIndex);
+				storeIndex++;
+			}
+		}
+		// move pivot back
+		swapElements(list, storeIndex, rightIndex);
+		return storeIndex;
+	}
+
+	/*
+		private static function
+		helper recursive function for <quickSelect>
+	*/
+	function quickSelectHelper(list, leftIndex, rightIndex, k, comparator)
+	{
+		if (leftIndex >= rightIndex) return list[k];
+
+		// randomly generate pivot index between <leftIndex> and
+		// <rightIndex> inclusive
+		var pivotIndex = Math.floor(Math.random() *
+			(rightIndex - leftIndex + 1)) + leftIndex;
+
+		// after partitioning, get the actual pivot index of selected element
+		pivotIndex = partition(list, leftIndex, rightIndex, pivotIndex,
+			comparator);
+
+		// found k; return it
+		if (pivotIndex == k) return list[k];
+		// k less than pivot; recurse left
+		else if (k < pivotIndex)
+			return quickSelectHelper(list, leftIndex, pivotIndex - 1, k, comparator);
+		// k greater than pivot; recurse right
+		else
+			return quickSelectHelper(list, pivotIndex + 1, rightIndex, k, comparator);
+	}
+
+	/*
+		private static function to select the <k>th largest element from <list>
+	*/
+	function quickSelect(list, k, comparator)
+	{
+		// console.log(k);
+		// console.log(list);
+		return quickSelectHelper(list.slice(), 0, list.length - 1, k - 1,
+			comparator);
+	}
+
 
 	/*	
 		return a set of simplified lines in this data view
 		such that the number of aggregate points is less than/equal to <cap>
 		pretty inefficient, so optimize later
 	*/
-	DataView.prototype.simplifyView = function(viewCap)
+	DataView.prototype.simplifyView = function(viewPtCap)
 	{
+		console.time("View Simplification");
 		// already have fewer points
-		if (this.numPoints <= viewCap)
+		if (this.numPoints <= viewPtCap)
 			return this.lines;
 
 		var simplifiedLines = [];
@@ -240,23 +310,65 @@ var DataView = (function()
 		// use line percentages to calculate total point cap per line
 		var lineCaps = [];
 		for (var i = 0; i < this.linePP.length; i++)
-			lineCaps.push(parseInt(this.linePP[i] * viewCap, 10));
+			lineCaps.push(parseInt(this.linePP[i] * viewPtCap, 10));
 
 		// simplify each line using corresponding line cap
-		for (i = 0, lineCap = 0, simpLine = null;
-			 i < this.linesPrioritized.length; i++)
+		for (var i = 0, lineCap = 0, line = null; i < this.lines.length; i++)
 		{
+			line = this.lines[i];
 			// cap for this line is maximum(computed cap, line floor)
 			lineCap = lineCaps[i] < this.lineFloor ? this.lineFloor : lineCaps[i];
-			// slice top <lineCap> points, sort by line position
-			simpLine = this.linesPrioritized[i].slice(0, lineCap);
-			simpLine.sort(function(a, b){ return a[4] - b[4]; });
+
+			var simpLine = [];
+			if (lineCap > line.length)
+			{
+				simpLine = line;
+			}
+			else
+			{
+				/*
+				// slice top <lineCap> points, sort by line position
+				simpLine = this.linesPrioritized[i].slice(0, lineCap);
+				simpLine.sort(function(a, b){ return a[4] - b[4]; });
+				*/
+				var kthVal = quickSelect(line, lineCap,
+					function(a, b){ return b[2] - a[2]; });
+				// console.log(kthVal);
+				for (var j = 0, point = null; j < line.length; j++)
+				{
+					point = line[j];
+					if (point[2] >= kthVal[2]) simpLine.push(point);
+				}
+			}
 			simplifiedLines.push(simpLine);
 		}
+		console.timeEnd("View Simplification");
 
 		// cache this for zooming out
 		this.cachedSimpLines = simplifiedLines;
 		return simplifiedLines;
+	};
+
+	// "zoom" in on a rectangle defined by bounds object(x1, x2, y1, y2)
+	DataView.prototype.subView = function(boundsVP, boundsAxis, lineFloor)
+	{
+		return new DataView(this.lines, boundsVP, boundsAxis, lineFloor);
+	};
+
+	// return a shallow clone of this data view
+	// this means the returned Data View's references the same
+	// array of lines, array of prioritized lines, bounds,
+	// array of point percentiles, cached lines (if not null), etc.
+	DataView.prototype.shallowClone = function()
+	{
+		var clone = new DataView([], [[null, null], [null, null]],
+			[[null, null], [null, null]], 0);
+		var context = this;
+		Object.getOwnPropertyNames(context).forEach(function(val)
+		{
+			clone[val] = context[val];
+		});
+		return clone;
 	};
 
 	return DataView;

@@ -20,14 +20,14 @@
 var ZoomManager = (function()
 {
 	// constructor
-	function ZoomManager(chart, lines, viewCap=50000, syncCharts=[])
+	function ZoomManager(chart, viewPtCap, lineFloor, lines, syncCharts)
 	{
 		this.chart = chart;
-		// already prioritized
-		this.lines = lines;
 		this.oldViewStack = [];
-		this.currentView = new DataView(lines, [[null, null], [null, null]], 50);
-		this.viewCap = viewCap; // maximum number of points
+		this.viewPtCap = viewPtCap; // max num of points to render per chart
+		this.lineFloor = lineFloor; // min num points to render per line
+		this.currentView = new DataView(lines, [[null, null], [null, null]],
+			[[null, null], [null, null]], this.lineFloor);
 		this.syncCharts = syncCharts;
 
 		// bind callbacks to zoom
@@ -46,7 +46,6 @@ var ZoomManager = (function()
 					break;
 				default:
 					break;
-					//console.log(e.trigger);
 			}
 		};
 
@@ -59,12 +58,28 @@ var ZoomManager = (function()
 	{
 		var axisX = e.axisX[0],
 			axisY = e.axisY[0],
-			bounds = [[axisX.viewportMinimum, axisY.viewportMinimum],
+			userBounds = [[axisX.viewportMinimum, axisY.viewportMinimum],
 				[axisX.viewportMaximum, axisY.viewportMaximum]];
 
-		//var childView = this.currentView.subView(bounds);
 		this.oldViewStack.push(this.currentView);
-		this.renderDataView(this.currentView = this.currentView.subView(bounds, 50));
+		// already below point threshold
+		// panning restriction/simplification are unnecessary
+		// simply mimic native CanvasJS zooming
+		if (this.currentView.numPoints <= this.viewPtCap)
+		{
+			this.currentView = this.currentView.shallowClone();
+			this.currentView.boundsVP = userBounds;
+		}
+		// continue with dynamic simplification
+		else
+		{
+			console.log("hmm");
+			console.time("Subview (Zoom)");
+			this.currentView = this.currentView.subView(userBounds, userBounds,
+				this.lineFloor);
+			console.timeEnd("Subview (Zoom)");
+		}
+		this.renderDataView(this.currentView);
 	};
 
 	// handler for canvasjs reset zoom feature
@@ -77,10 +92,6 @@ var ZoomManager = (function()
 			return;
 		}
 
-		// reset current view and view stack to initial view
-	/*	this.currentView = this.oldViewStack[0];
-		this.oldViewStack = [];
-		this.renderDataView(this.currentView);*/
 		this.renderDataView(this.currentView = this.oldViewStack.pop());
 		return;
 	};
@@ -90,24 +101,24 @@ var ZoomManager = (function()
 		set a chart's x and y axis viewports to given limits
 		--> setting axis min/max means no panning
 	*/
-	function setChartViewport(chart, bounds, fixAxes=true)
+	function setChartBounds(chart, dataview)
 	{
+		var boundsVP = dataview.boundsVP,
+			boundsAxis = dataview.boundsAxis;
+
 		chart.options.axisX = {
-			viewportMinimum: bounds[0][0],
-			viewportMaximum: bounds[1][0]
+			viewportMinimum: boundsVP[0][0],
+			viewportMaximum: boundsVP[1][0]
 		};
 		chart.options.axisY = {
-			viewportMinimum: bounds[0][1],
-			viewportMaximum: bounds[1][1]
+			viewportMinimum: boundsVP[0][1],
+			viewportMaximum: boundsVP[1][1]
 		};
 
-		if (fixAxes)
-		{
-			chart.options.axisX.minimum = bounds[0][0];
-			chart.options.axisX.maximum = bounds[1][0];
-			chart.options.axisY.minimum = bounds[0][1];
-			chart.options.axisY.maximum = bounds[1][1];			
-		}
+		chart.options.axisX.minimum = boundsAxis[0][0];
+		chart.options.axisX.maximum = boundsAxis[1][0];
+		chart.options.axisY.minimum = boundsAxis[0][1];
+		chart.options.axisY.maximum = boundsAxis[1][1];
 		return;
 	}
 
@@ -123,7 +134,7 @@ var ZoomManager = (function()
 		// check for cached simplified lines by default
 		// and use those if they exist
 		var data = dataview.cachedSimpLines !== null ?
-			dataview.cachedSimpLines : dataview.simplifyView(this.viewCap);
+			dataview.cachedSimpLines : dataview.simplifyView(this.viewPtCap);
 
 		// count number of points in simplified dataview
 		for (var count = i = 0; i < data.length; i++)
@@ -145,16 +156,15 @@ var ZoomManager = (function()
 		// and viewport automatically sizes min/max x and y points
 		// 2) defined rectangle bounds for zoomed in view
 		// this latter case causes reset/pan buttons to appear
-		setChartViewport(this.chart, dataview.bounds, true);
+		setChartBounds(this.chart, dataview);
 
 		this.chart.render();
 
 		// any sync charts
 		for (i = 0, chart = null; i < this.syncCharts.length; i++)
 		{
-			setChartViewport(this.syncCharts[i], dataview.bounds, false);
+			setChartBounds(this.syncCharts[i], dataview);
 			this.syncCharts[i].render();
-			// console.log(this.syncCharts[i]);
 		}
 	};
 

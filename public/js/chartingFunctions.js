@@ -7,6 +7,9 @@ var CanvasHelper = (function()
 		var segmentData = [];
 		var canvasObject = {
 			type: "line",
+			click: function(e){
+				console.log(e);
+			},
 			markerType: "none", // so data points don't become circles
 			dataPoints: segmentData
 		};

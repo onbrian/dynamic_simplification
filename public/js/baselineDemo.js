@@ -19,6 +19,7 @@ function generatePoints(numLines, limit)
 	return data;
 }
 
+// 200, 10000
 var numLines = 200;
 var limit = 10000;    //increase number of dataPoints by increasing this
 
@@ -34,6 +35,9 @@ for (var i = 0; i < rawData.length; i++)
 }
 console.timeEnd("VW Simplification");
 
+/*var test = rawData[0].slice();
+console.log(quickSelect(test, 2, function(a, b){ return a[2] - b[2]; }));
+console.log(test.sort(function(a, b){ return a[2] - b[2]; }));*/
 window.onload = function()
 {
 	var width = 550;
@@ -45,7 +49,7 @@ window.onload = function()
 
 	// initialize & render zoomable, simplified chart
     var chartZoom = CanvasHelper.initEmptyChart("chartContainerVW", height, width);
-    var zm = new ZoomManager(chartZoom, rawData, 50000, [chartFull]);
+    var zm = new ZoomManager(chartZoom, 50000, 50, rawData, [chartFull]);
     zm.render();
 
 
