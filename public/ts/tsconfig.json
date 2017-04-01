@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-      "outDir": "../ts_js",
+      "outDir": "./ts_js",
       "module": "es2015",
       "target": "es5"
     },

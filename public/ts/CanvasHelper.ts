@@ -1,4 +1,4 @@
-/// <reference path="./typings/canvasjs.d.ts" />
+/// <reference path="../ts_typings/canvasjs.d.ts" />
 
 export class CanvasHelper {
     constructor() { };

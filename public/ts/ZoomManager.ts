@@ -1,4 +1,4 @@
-﻿/// <reference path="./typings/canvasjs.d.ts" />
+﻿/// <reference path="../ts_typings/canvasjs.d.ts" />
 
 import { DataSlice, Bounds } from './DataSlice';
 import { CanvasHelper } from './CanvasHelper';

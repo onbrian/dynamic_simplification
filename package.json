@@ -4,7 +4,8 @@
   "description": "implement big data visualization with canvas js",
   "main": "server.js",
   "scripts": {
-    "build": "cd public/ts && tsc && cd ../.. && webpack",
+    "build": "cd public/ts_compact && tsc && cd ../.. && webpack",
+    "build2": "cd public/ts && tsc && cd ../.. && webpack",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

@@ -42,6 +42,12 @@ app.get('/ts_demo', function(req, res) {
 });
 
 
+// load main page
+app.get('/ts_demo2', function (req, res) {
+    res.render('ts_demo2.html');
+});
+
+
 /*
 // give csv
 app.get('/RTP_data_csv', function(req, res){
