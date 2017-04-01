@@ -1,2 +1,3 @@
 /public/js/libraries
 /node_modules
+/public/ts_typings/canvasjs.d.ts

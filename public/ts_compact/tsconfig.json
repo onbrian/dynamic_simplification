@@ -6,6 +6,6 @@
     },
   "include": [
     "./*.ts",
-    "../ts_typings/*.ts"
+    ".typings/*.ts"
   ]
 }
