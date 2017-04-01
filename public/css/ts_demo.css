@@ -1,0 +1,12 @@
+.outer {
+	width: 500px;
+}
+
+.chartTitle {
+	text-align: center;
+}
+
+.inner {
+	height: 300px;
+	width: 500px;
+}

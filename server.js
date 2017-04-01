@@ -36,6 +36,11 @@ app.get('/baselineDemo', function(req, res) {
     res.render('baselineDemo.html');
 });
 
+// load main page
+app.get('/ts_demo', function(req, res) {
+    res.render('ts_demo.html');
+});
+
 
 /*
 // give csv

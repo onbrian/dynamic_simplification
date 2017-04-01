@@ -90,8 +90,8 @@ var DataView = (function()
 	*/
 	function pointInBoundsX(bounds, p)
 	{
-		if (bounds === null) return true;
-		return !(p[0] < bounds[0][0] || p[0] > bounds[1][0]);
+	    if (bounds === null) return true;
+	    return !(p[0] < bounds[0][0] || p[0] > bounds[1][0]);
 	}
 
 	/*	

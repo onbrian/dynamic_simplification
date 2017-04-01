@@ -4,6 +4,7 @@
   "description": "implement big data visualization with canvas js",
   "main": "server.js",
   "scripts": {
+    "build": "cd public/ts && tsc && cd ../.. && webpack",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -14,5 +15,9 @@
   "dependencies": {
     "ejs": "^2.5.5",
     "express": "^4.14.0"
+  },
+  "devDependencies": {
+    "typescript": "^2.2.1",
+    "webpack": "^2.3.1"
   }
 }

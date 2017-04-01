@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+      "outDir": "../ts_js",
+      "module": "es2015",
+      "target": "es5"
+    },
+  "include": [
+    "./*.ts",
+    ".typings/*.ts"
+  ]
+}

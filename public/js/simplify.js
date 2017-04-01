@@ -49,7 +49,6 @@ var Simplify = (function()
 			leftNeighbor.pRight = tri.pRight;
 			// remove neighbor, recompute area, push
 			updateTri(minheap, leftNeighbor);
-
 		}
 
 		// update right neighbor if necessary
@@ -122,7 +121,7 @@ var Simplify = (function()
 		while (minHeap.getLength() > 0)
 		{
 			//console.log(minHeap.array.slice());
-			tri = minHeap.pop();
+		    tri = minHeap.pop();
 			// effective area is maximum(previous triangle's area + 1, current triangle area)
 			effectiveArea = (effectiveArea !== null) &&
 				(effectiveArea >= tri.area) ? (effectiveArea + 1) : tri.area;
