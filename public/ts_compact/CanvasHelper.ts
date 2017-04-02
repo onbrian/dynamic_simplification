@@ -1,9 +1,6 @@
-/// <reference path="../ts_typings/canvasjs.d.ts" />
-
-export class CanvasHelper {
-    constructor() { };
-
-    static segmentToCanvasObject(segment: Array<Array<number>>): CanvasJS.ChartDataOptions
+module CanvasHelper 
+{
+    export function segmentToCanvasObject(segment: Array<Array<number>>): CanvasJS.ChartDataOptions
     {
         let segmentData: Array<CanvasJS.ChartDataPoint> = [];
 
@@ -22,7 +19,7 @@ export class CanvasHelper {
         return canvasObject;
     }
 
-    static linesToCanvasObjects(lines: Array<Array<Array<number>>>): Array<CanvasJS.ChartDataOptions>
+    export function linesToCanvasObjects(lines: Array<Array<Array<number>>>): Array<CanvasJS.ChartDataOptions>
     {
         let segments: Array<CanvasJS.ChartDataOptions> = [];
         for (let i = 0; i < lines.length; i++) {
@@ -31,7 +28,7 @@ export class CanvasHelper {
         return segments;
     }
 
-    static initEmptyChart(elementID: string, height: number, width: number): CanvasJS.Chart
+    export function initEmptyChart(elementID: string, height: number, width: number): CanvasJS.Chart
     {
         let chart: CanvasJS.Chart = new CanvasJS.Chart(elementID,
         {

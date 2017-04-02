@@ -1,7 +1,3 @@
-import { CanvasHelper } from "./CanvasHelper";
-import { Simplify } from "./Simplify";
-import { ZoomManager } from "./ZoomManager"; 
-
 // semi-randomly generate <numLines> lines, each with <limit> points
 function generatePoints(numLines: number,
 	limit: number):Array<Array<Array<number>>>
@@ -34,7 +30,7 @@ function getSimplifiedData(rawData: Array<Array<Array<number>>>, k: number): Arr
 
     for (let i: number = 0; i < rawData.length; i++)
     {
-        simpData.push(Simplify.selectTopK<Array<number>>(rawData[i], k, comparator));
+        simpData.push(DataSimplify.selectTopK<Array<number>>(rawData[i], k, comparator));
     }
     return simpData;
 }
@@ -73,7 +69,7 @@ let rawData: Array<Array<Array<number>>> = generatePoints(numLines,
 
 // process & insert simplification data
 for (let i: number = 0; i < rawData.length; i++)
-    Simplify.VisvalWhyattRank(rawData[i]);
+    DataSimplify.VisvalWhyattRank(rawData[i]);
 
 let simpData: Array<Array<Array<number>>> = getSimplifiedData(rawData, 100);
 
@@ -97,6 +93,6 @@ window.onload = function()
 
 	// initialize & render zoomable, simplified chart
     let chartZoom: CanvasJS.Chart = CanvasHelper.initEmptyChart("chartContainerVW", height, width);
-    let zoomManager: ZoomManager = new ZoomManager(chartZoom, 500, 50, rawData, [chartFull]);
+    let zoomManager: ZoomManager.ZoomManager = new ZoomManager.ZoomManager(chartZoom, 500, 50, rawData, [chartFull]);
     zoomManager.render();
 };
