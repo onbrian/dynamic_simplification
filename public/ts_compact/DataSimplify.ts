@@ -1,6 +1,18 @@
 ﻿module DataSimplify
 {
-    /* useful math static functions/variables */
+    /*
+        module has 4 parts:
+        1) "static" (standalone) useful algebra/geometry functions/variables
+        2) visvalingham-whyatt algorithm implementation & associated helper 
+            functions/classes
+        3) quick select/select top k algorithm implementation & associated
+            helper functions
+        4) DataSlice class implementation & associated helper interface
+    */    
+
+    /**************************************************************************/
+	/******************* Useful standalone math functions *********************/
+	/**************************************************************************/
 
     export var AXIS_X: number = 0;
     export var AXIS_Y: number = 1;
@@ -38,44 +50,16 @@
             (b[AXIS_Y] - a[AXIS_Y]) + a[AXIS_X], y];
     }
 
+    /*
+        Get the area of a triangle defined by points
+        <a>, <b>, <c>
+    */
     function triangleArea(a: Array <number>, b: Array<number>, 
         c: Array<number>): number
     {
         return Math.abs((a[0] - c[0]) * (b[1] - a[1]) - (a[0] - b[0]) *
             (c[1] - a[1]));
     }
-
-    function getSqSegDist(p: Array<number>, a: Array<number>, 
-        b: Array<number>): number
-    {
-        let x: number = a[0], y: number = a[1],
-        bx: number = b[0], by: number = b[1],
-        px: number = p[0], py: number = p[1],
-        dx: number = bx - x, // horizontal distance between <a> and <b>
-        dy: number = by - y; // vertical distance between <a> and <b>
-
-        // check up on this later
-        if (dx !== 0 || dy !== 0) 
-        {
-            let t: number = ((px - x) * dx + (py - y) * dy) / (dx * dx + dy * dy);
-
-            if (t > 1) 
-            {
-                x = bx;
-                y = by;
-            }
-            else if (t > 0) 
-            {
-                x += dx * t;
-                y += dy * t;
-            }
-        }
-
-        dx = px - x;
-        dy = py - y;
-        return dx * dx + dy * dy;
-    }
-
 
     /**************************************************************************/
 	/********************* VISVALINGHAM-WHYATT ALGORITHM **********************/
@@ -346,6 +330,10 @@
         }
         return listTopK;
     }
+
+    /**************************************************************************/
+    /**************************** DataSlice Class *****************************/
+    /**************************************************************************/
 
     /*
 	    Data Slice Class Implementation
