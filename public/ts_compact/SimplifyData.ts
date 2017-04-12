@@ -1,14 +1,38 @@
-﻿module DataSimplify
+﻿/*
+    this hefty module has 4 parts:
+    1) "static" (standalone) useful algebra/geometry functions/variables
+    2) visvalingham-whyatt algorithm implementation & associated helper 
+        functions/classes
+    3) quick select/select top k algorithm implementation & associated
+        helper functions
+    4) DataSlice class implementation & associated helper interface
+        --> really want to move this out... not really relevant 
+*/
+
+/* No dependencies -- completely standalone module */
+
+module SimplifyData
 {
-    /*
-        module has 4 parts:
-        1) "static" (standalone) useful algebra/geometry functions/variables
-        2) visvalingham-whyatt algorithm implementation & associated helper 
-            functions/classes
-        3) quick select/select top k algorithm implementation & associated
-            helper functions
-        4) DataSlice class implementation & associated helper interface
-    */    
+
+    /**************************************************************************/
+    /************************** POINT WRAPPER CLASS ***************************/
+    /**************************************************************************/
+
+    export abstract class AbstractPointWrapper {
+        // underlying point data structure can be anything
+        public point: any;
+        public index: number;
+        public significance: number;
+        constructor(point: any, index: number) {
+            this.point = point;
+            this.index = index;
+            this.significance = -1;
+        }
+
+        public abstract getX(): number;
+        public abstract getY(): number;
+        public abstract toCanvasPointObject(): CanvasJS.ChartDataPoint;
+    }
 
     /**************************************************************************/
 	/******************* Useful standalone math functions *********************/
@@ -39,6 +63,14 @@
             (b[AXIS_X] - a[AXIS_X]) + a[AXIS_Y]];
     }
 
+/*
+    function intersectX(a: PointWrapper, b: PointWrapper, x: number): number[]
+    {
+        return [x, (x - a.getX() * (b.getY() - a.getY()) /
+            (b.getX() - a.getX()) + a.getY())];
+    }
+*/
+
     /*	
 		Get the intersection between horizontal line y=<y>
 		and the line defined by points <a> & <b>
@@ -54,11 +86,11 @@
         Get the area of a triangle defined by points
         <a>, <b>, <c>
     */
-    function triangleArea(a: Array <number>, b: Array<number>, 
-        c: Array<number>): number
+    function triangleArea<T extends AbstractPointWrapper>(a: T, b: T, 
+        c: T): number
     {
-        return Math.abs((a[0] - c[0]) * (b[1] - a[1]) - (a[0] - b[0]) *
-            (c[1] - a[1]));
+        return Math.abs((a.getX() - c.getX()) * (b.getY() - a.getY()) - (a.getX() - b.getX()) *
+            (c.getY() - a.getY()));
     }
 
     /**************************************************************************/
@@ -66,26 +98,26 @@
 	/**************************************************************************/
 
     // helper class to store point-triangles on min heap
-    class Triangle
+    class Triangle<T extends AbstractPointWrapper>
     {
         // initial index of triangle (<p>) in line
         public i: number;
         // "central" point on triangle
-        public p: Array<number>;
+        public p: T;
         // point on triangle to left of <p>
-        public pLeft: Array<number>;
+        public pLeft: T;
         // point on triangle to right of <p>
-        public pRight: Array<number>;
+        public pRight: T;
         // area of this triangle (formed by p, pLeft, pRight)
         public area: number;
         // triangle to left in line (left neighbor)
-        public nLeft: Triangle;
+        public nLeft: Triangle<T>;
         // triangle to right in line (right neighbor)
-        public nRight: Triangle;
+        public nRight: Triangle<T>;
         // property for min heap
         public index: number;
 
-        constructor(i: number, p: Array<number>, pLeft: Array<number>, pRight: Array<number>)
+        constructor(i: number, p: T, pLeft: T, pRight: T)
         {
             this.i = i;
             this.p = p;
@@ -124,8 +156,8 @@
     // private helper function for <VisvalWhyattRank>
 	// update triangle's position in min heap
 	// useful if triangle's points have changed
-    function updateTriangle(minheap: Collections.MinHeap<Triangle>, 
-        triangle: Triangle): void
+    function updateTriangle<T extends AbstractPointWrapper>(minheap: Collections.MinHeap<Triangle<T>>, 
+        triangle: Triangle<T>): void
     {
         // remove triangle, update area, add again
         minheap.remove(triangle);
@@ -137,10 +169,11 @@
     // private helper function for <VisvalWhyattRank>
     // when removing a point associated w min triangle area
 	// update areas and positions of neighboring triangles in min heap
-    function updateNeighbors(minheap, triangle): void
+    function updateNeighbors<T extends AbstractPointWrapper>(minheap: Collections.MinHeap<Triangle<T>>, 
+        triangle: Triangle<T>): void
     {
         // update left neighbor if necessary
-        let leftNeighbor: Triangle = triangle.nLeft;
+        let leftNeighbor: Triangle<T> = triangle.nLeft;
         if (leftNeighbor !== null)
         {
             // left neighbor's right point is now <tri>'s right point
@@ -150,7 +183,7 @@
         }
 
         // update right neighbor if necessary
-        let rightNeighbor: Triangle = triangle.nRight;
+        let rightNeighbor: Triangle<T> = triangle.nRight;
         if (rightNeighbor !== null)
         {
             // right neighbor's left point is now <tri>'s left point
@@ -177,26 +210,26 @@
 
     // use Visvalingam-Whyatt algorithm to assign significance values to each point
     // in line <line>. These values are stored as a z-coordinate for each point
-    export function VisvalWhyattRank(line: Array<Array<number>>): void
+    export function VisvalWhyattRank<T extends AbstractPointWrapper>(line: T[]): void
     {
         // no points in line
         if (line.length === 0) return;
 
         // end points are most important & should not be deleted
-        setCoordinateZ(line[0], Infinity);
-        setCoordinateZ(line[line.length - 1], Infinity);
+        line[0].significance = Infinity;
+        line[line.length - 1].significance = Infinity;
 
         if (line.length <= 2) return;
 
         // min priority queue to store points/triangles in order of area
-        let minHeap: Collections.MinHeap<Triangle> = 
-            new Collections.MinHeap<Triangle>(function (a: Triangle, b: Triangle): number
+        let minHeap: Collections.MinHeap<Triangle<T>> = 
+            new Collections.MinHeap<Triangle<T>>(function (a: Triangle<T>, b: Triangle<T>): number
         {
             return a.area - b.area;
         });
 
         // initialize triangles for points in line
-        for (let i: number = 1, prevTri: Triangle = null, currTri: Triangle = null;
+        for (let i: number = 1, prevTri: Triangle<T> = null, currTri: Triangle<T> = null;
             i < line.length - 1; i++)
         {
             currTri = new Triangle(i, line[i], line[i - 1], line[i + 1]);
@@ -213,7 +246,7 @@
         }
 
         // all triangles are now in priority queue -- now pop them off by area
-        let tri: Triangle = null,
+        let tri: Triangle<T> = null,
             effectiveArea: number = null;
 
         while (minHeap.getLength() > 0)
@@ -225,7 +258,7 @@
                 (effectiveArea >= tri.area) ? (effectiveArea + 1) : tri.area;
 
             // store area with point as 3rd coordinate
-            setCoordinateZ(line[tri.i], effectiveArea);
+            line[tri.i].significance = effectiveArea;
             updateNeighbors(minHeap, tri);
         }
         return;
@@ -360,6 +393,9 @@
 	    None
     */
 
+    /*
+        interface representing a rectangular boundary
+    */
     export interface Bounds 
     {
         minX: number;
@@ -368,25 +404,25 @@
         maxY: number;
     }
 
-    export class DataSlice 
+    export class DataSlice<T extends AbstractPointWrapper>
     {
         // number of total points contained in this slice
         public numPoints: number;
         // lines contained in the bounds of this slice
-        private lines: Array<Array<Array<number>>>;
+        private lines: T[][];
         // viewport bounds of this data slice
         public boundsViewport: Bounds;
         // axis bounds of this data slice
-        private boundsAxis: Bounds;
+        public boundsAxis: Bounds;
         // array containing proportion of points each line contributes
         // to aggregate number of points
         private linePP: Array<number>;
         // min number of points per line
         private linePtMin: number;
         // last simplified lines cached
-        public cachedSimpLines: Array<Array<Array<number>>>;
+        public cachedSimpLines: T[][];
 
-        constructor(lines: Array<Array<Array<number>>>, boundsViewport: Bounds,
+        constructor(lines: T[][], boundsViewport: Bounds,
             boundsAxis: Bounds, linePtMin: number) {
             this.numPoints = 0;
             this.lines = [];
@@ -414,11 +450,12 @@
                 this.linePP.push(this.lines[i].length / this.numPoints);
         }
 
-        public simplifySlice(chartPtMax: number): Array<Array<Array<number>>> {
+        public simplifySlice(chartPtMax: number): T[][] 
+        {
             console.time("View Simplification");
             // already have fewer points
             if (this.numPoints <= chartPtMax) return this.lines;
-            var simplifiedLines = [];
+            let simplifiedLines: T[][] = [];
 
             // use line percentages to compute point caps per line
             let lineCaps: Array<number> = [];
@@ -430,17 +467,17 @@
 
             // simplify each line using corresponding line cap
             for (let i: number = 0, lineCap: number = 0,
-                line: Array<Array<number>> = null; i < this.lines.length; i++) {
+                line: T[] = null; i < this.lines.length; i++) {
                 line = this.lines[i];
                 // cap for this line is maximum (computed cap, line pt min)
                 lineCap = lineCaps[i] < this.linePtMin ? this.linePtMin : lineCaps[i];
 
-                let simpLine: Array<Array<number>> = null;
+                let simpLine: T[] = null;
                 if (lineCap > line.length) simpLine = line;
                 else {
                     simpLine = selectTopK(line, lineCap,
-                        function (a: Array<number>, b: Array<number>): number {
-                            return a[2] - b[2];
+                        function (a: T, b: T): number {
+                            return a.significance - b.significance;
                         });
                 }
 
@@ -453,18 +490,18 @@
         }
 
         // "zoom" in on a rectangle defined by bounds object
-        public subSlice(boundsViewport, boundsAxis, linePtMin): DataSlice {
-            return new DataSlice(this.lines, boundsViewport, boundsAxis, linePtMin);
+        public subSlice(boundsViewport, boundsAxis, linePtMin): DataSlice<T> {
+            return new DataSlice<T>(this.lines, boundsViewport, boundsAxis, linePtMin);
         }
 
         // return a shallow clone of this data slice
         // this means the returned Data Slice's references the same
         // array of lines, array of prioritized lines, bounds,
         // array of point percentiles, cached lines (if not null), etc.
-        public shallowClone(): DataSlice {
+        public shallowClone(): DataSlice<T> {
             let fillerBounds: Bounds = { minX: null, maxX: null, minY: null, maxY: null };
-            let clone: DataSlice = new DataSlice([], fillerBounds, fillerBounds, 0);
-            let context: DataSlice = this;
+            let clone: DataSlice<T> = new DataSlice<T>([], fillerBounds, fillerBounds, 0);
+            let context: DataSlice<T> = this;
             // copy over all properties from this object to <clone>
             Object.getOwnPropertyNames(context).forEach(function (val: string): void {
                 clone[val] = context[val];
@@ -483,25 +520,31 @@
             private static helper function for constructor
             is point <p> contained in <bounds> for x axis?
         */
-        private static pointInBoundsX(p: Array<number>, bounds: Bounds): boolean {
+        private static pointInBoundsX<T extends AbstractPointWrapper>(p: T, 
+            bounds: Bounds): boolean 
+        {
             if (DataSlice.nullBounds(bounds)) return true;
-            return !(p[0] < bounds.minX || p[0] > bounds.maxX);
+            return !(p.getX() < bounds.minX || p.getX() > bounds.maxX);
         }
 
         /*	
             private static helper function for constructor
             is point <p> contained in <bounds> for y axis?
         */
-        private static pointInBoundsY(p: Array<number>, bounds: Bounds): boolean {
+        private static pointInBoundsY<T extends AbstractPointWrapper>(p: T, 
+            bounds: Bounds): boolean 
+        {
             if (DataSlice.nullBounds(bounds)) return true;
-            return !(p[1] < bounds.minY || p[1] > bounds.maxY);
+            return !(p.getY() < bounds.minY || p.getY() > bounds.maxY);
         }
 
         /*	
             private helper function for constructor
             is point <p> contained in <bounds>?
         */
-        private static pointInBounds(p: Array<number>, bounds: Bounds): boolean {
+        private static pointInBounds<T extends AbstractPointWrapper>(p: T, 
+            bounds: Bounds): boolean 
+        {
             // all points are in
             if (DataSlice.nullBounds(bounds)) return true;
             return DataSlice.pointInBoundsX(p, bounds) &&
@@ -515,8 +558,8 @@
             (technically out of bounds) if they exist, otherwise returns
             the first/last indices of the points in bounds.
         */
-        private static hardClipToBounds(line: Array<Array<number>>, bounds: Bounds):
-            Array<Array<number>> {
+        private static hardClipToBounds<T extends AbstractPointWrapper>(line: T[], 
+            bounds: Bounds): T[] {
             // not all bounds are defined
             if (DataSlice.nullBounds(bounds)) return line;
             if (line.length <= 2) return line;

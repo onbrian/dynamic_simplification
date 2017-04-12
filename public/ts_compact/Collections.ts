@@ -1,4 +1,7 @@
-﻿module Collections
+﻿/* No dependencies -- completely standalone module */
+
+
+module Collections
 {
     interface HeapItem
     {

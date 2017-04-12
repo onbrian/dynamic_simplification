@@ -1,12 +1,12 @@
 module CanvasHelper 
 {
-    export function segmentToCanvasObject(segment: Array<Array<number>>): CanvasJS.ChartDataOptions
+    export function segmentToCanvasObject<T extends SimplifyData.AbstractPointWrapper>(
+        segment: T[]): CanvasJS.ChartDataOptions
     {
-        let segmentData: Array<CanvasJS.ChartDataPoint> = [];
+        let segmentData: CanvasJS.ChartDataPoint[] = [];
 
-        for (let i = 0; i < segment.length; i++) {
-            segmentData.push({ x: segment[i][0], y: segment[i][1] });
-        }
+        for (let i = 0; i < segment.length; i++)
+            segmentData.push(segment[i].toCanvasPointObject());
 
         let canvasObject: CanvasJS.ChartDataOptions = {
             type: "line",
@@ -19,11 +19,12 @@ module CanvasHelper
         return canvasObject;
     }
 
-    export function linesToCanvasObjects(lines: Array<Array<Array<number>>>): Array<CanvasJS.ChartDataOptions>
+    export function linesToCanvasObjects<T extends SimplifyData.AbstractPointWrapper>(
+        lines: T[][]): CanvasJS.ChartDataOptions[]
     {
-        let segments: Array<CanvasJS.ChartDataOptions> = [];
+        let segments: CanvasJS.ChartDataOptions[] = [];
         for (let i = 0; i < lines.length; i++) {
-            segments.push(CanvasHelper.segmentToCanvasObject(lines[i]));
+            segments.push(CanvasHelper.segmentToCanvasObject<T>(lines[i]));
         }
         return segments;
     }

@@ -10,19 +10,19 @@ var path = require('path');
     then run the following command: % npm run build
 */
 
-module.exports = {
-    entry: './public/ts/ts_js/demo.js',
-    output: {
-        filename: 'bundle.js',
-        path: path.resolve(__dirname, 'public/ts/ts_js')
-    }
-};
-
-
 //module.exports = {
-//    entry: './public/ts_compact/ts_js/demo.js',
+//    entry: './public/ts/ts_js/demo.js',
 //    output: {
 //        filename: 'bundle.js',
-//        path: path.resolve(__dirname, 'public/ts_compact/ts_js')
+//        path: path.resolve(__dirname, 'public/ts/ts_js')
 //    }
 //};
+
+
+module.exports = {
+    entry: './public/ts_compact/ts_js/demo.js',
+    output: {
+        filename: 'bundle.js',
+        path: path.resolve(__dirname, 'public/ts_compact/ts_js')
+    }
+};
